@@ -1,0 +1,205 @@
+# Imports
+import torch
+import numpy as np
+import chromadb
+from chromadb import Collection
+from sentence_transformers import (
+    SentenceTransformer, models, losses, util, InputExample, evaluation, SentenceTransformerTrainingArguments, SentenceTransformerTrainer)
+from accelerate import Accelerator
+import glob
+import os
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import ollama
+import json
+import pygetwindow as gw
+from Quartz import CGWindowListCopyWindowInfo, kCGWindowListOptionOnScreenOnly, kCGNullWindowID
+from AppKit import NSWorkspace, NSApplication, NSRunningApplication
+from Quartz.CoreGraphics import CGRectMake
+import subprocess
+from openai import OpenAI
+from dotenv import load_dotenv
+
+
+
+def get_function_to_call(client, messages, tools, available_functions):
+    """Calls one iteration of the function calling process."""
+    
+    
+    # Get the response
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        tools=tools,
+        tool_choice="auto"
+    )
+
+    response_message = response.choices[0].message
+    tool_calls = response_message.tool_calls
+    
+    messages.append(response_message)
+    
+    if tool_calls:
+        for tool_call in tool_calls:
+            function_name = tool_call.function.name
+            function = available_functions[function_name]
+            parameters = json.loads(tool_call.function.arguments)
+            
+            func_response = function(
+                **parameters
+            )
+            
+            messages.append(
+                {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": func_response,
+                }
+            )
+        return messages
+    return "Failed"
+    
+def get_available_functions():
+    """Get the available functions for the user to choose from.
+    
+    Format:
+    {
+        "func_name1": func1,
+        "func_name2": func2
+    }
+    """
+    available_functions = {
+        "full_resize": full_resize
+    }
+    return available_functions
+    
+    
+def get_tools():
+    """Get the available tools for the user to choose from.
+    
+    Format:
+    [
+        {
+            "name": "func_name1",
+            "description": "Description of the function",
+            "parameters": {
+                "argument1": "value1",
+                "argument2": "value2"
+            }
+        },
+    ]
+    
+    
+    """
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "full_resize",
+                "description": "Resize a window to the specified dimensions",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "window_name": {
+                            "type": "string",
+                            "description": "The name of the window to resize"
+                        },
+                        "x": {
+                            "type": "number",
+                            "description": "The x-coordinate of the window"
+                        },
+                        "y": {
+                            "type": "number",
+                            "description": "The y-coordinate of the window"
+                        },
+                        "w": {
+                            "type": "number",
+                            "description": "The width of the window"
+                        },
+                        "h": {
+                            "type": "number",
+                            "description": "The height of the window"
+                        }
+                    },
+                    "required": ["window_name", "x", "y", "w", "h"]
+                }
+            }
+        }
+    ]
+    return tools
+
+def find_window(app_name):
+    windows = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID)
+    for window in windows:
+        # print(window)
+        # if 'kCGWindowName' in window and 'kCGWindowOwnerName' in window:
+            # print(window['kCGWindowOwnerName'])
+        if window['kCGWindowOwnerName'] == app_name:
+            return window
+    return None
+
+# Resize the window
+def resize_window(window, x_bound, y_bound, width, height):
+    # Get the window ID and current bounds
+    # window_id = window['kCGWindowNumber']
+    # bounds = window['kCGWindowBounds']
+    
+    # New position and size
+    new_position = (x_bound, y_bound)
+    new_size = (width, height)
+    
+    # Use an AppleScript command to resize the window
+    script = f"""
+    tell application "System Events"
+        set the position of window 1 of process "{window["kCGWindowOwnerName"]}" to {{{new_position[0]}, {new_position[1]}}}
+        set the size of window 1 of process "Discord" to {{{new_size[0]}, {new_size[1]}}}
+    end tell
+    """
+    try:
+        subprocess.run(['osascript', '-e', script])
+        return "Success"
+    except Exception as e:
+        return e
+
+def full_resize(window_name, x=0, y=0, w=1000, h=1000):
+    window = find_window(window_name)
+    if window:
+        return resize_window(window, x, y, w, h)
+    else:
+        return (f"No window found for application {window_name}")
+
+if __name__ == "__main__":
+    # Set the seed for reproducibility
+    torch.random.manual_seed(0)
+    
+    # load the model
+    load_dotenv()
+    os.getenv("OPENAI_API_KEY")
+    client = OpenAI()
+    
+    query = "put discord on the right side of the screen"
+    
+    task_instruction = """
+    You are an expert in composing functions. You are given a question and a set of possible functions. 
+    Based on the question, you will need to make one or more function/tool calls to achieve the purpose. 
+    """.strip()
+
+    prompt = f"[BEGIN OF TASK INSTRUCTION]\n{task_instruction}\n[END OF TASK INSTRUCTION]\n\n"
+    prompt += f"[BEGIN OF QUERY]\n{query}\n[END OF QUERY]\n\n"
+    
+    messages=[
+        { 'role': 'user', 'content': prompt}
+    ]
+    
+    i = 0
+    while True or i < 10:  
+
+        
+        tools = get_tools()
+
+        response = get_function_to_call(client=client, messages=messages, tools=tools, available_functions=get_available_functions())
+        if response == "Failed":
+            break
+        i += 1
+        messages = response
+    
