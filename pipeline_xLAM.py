@@ -46,8 +46,6 @@ def function_call(model, query, tools, format_instruction):
     outputs = model.generate(inputs, max_new_tokens=512, do_sample=False, num_return_sequences=1, eos_token_id=tokenizer.eos_token_id,  pad_token_id=tokenizer.eos_token_id)
     print(tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True))
     
-    
-
 def convert_to_xlam_tool(tools):
     ''''''
     if isinstance(tools, dict):
