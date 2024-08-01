@@ -459,7 +459,7 @@ SYSTEM You have to give a clear and detailed and accurate description of the fil
     os.getenv("OPENAI_API_KEY")
     client = OpenAI()
     
-    query = "open my new years resolutions"
+    query = "create a file in my test directory with a poem about summer"
     
     task_instruction = """
     You are an expert in composing functions. You are given a question and a set of possible functions. 
