@@ -26,6 +26,7 @@ from Quartz.CoreGraphics import CGRectMake
 import subprocess
 from openai import OpenAI
 from dotenv import load_dotenv
+import uuid
 
 
 # Helper functions
@@ -87,14 +88,16 @@ def get_available_functions():
         "generate_text": generate_text,
         "list_files": list_files,
         "list_directories": list_directories,
+        "open_application": open_application,
+        "list_applications": list_applications,
     }
     return available_functions
-    
+
 def get_tools():
     """Get the available tools for the user to choose from."""
     
     # so far:
-    # 1. full_resize, 2. list_directories, 3. create_file, 4. generate_text, 5. open_file, 6. search_files
+    # 1. full_resize, 2. list_directories, 3. create_file, 4. generate_text, 5. open_file, 6. search_files, open_application
     tools = [
         {
             "type": "function",
@@ -219,7 +222,35 @@ def get_tools():
                     "required": ["query"],
                 }
             }
-        }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "open_application",
+                "description": "Open the application with the given name.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "app_name": {
+                            "type": "string",
+                            "description": "The name of the application to be opened."
+                        },
+                    },
+                    "required": ["app_name"],
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "list_applications",
+                "description": "List all the applications that are currently running.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                }
+            }
+        },
     ]
     return tools
 
@@ -282,20 +313,22 @@ def get_ollama_description(file_path: str, modelfile: str):
     return response['message']['content']    
 
 def add_to_database(file_list: list):
-    # sentences = []
-    # for file in file_list:
-    #     get_ollama_description(file_path=file, modelfile=modelfile)
-    
+
     sentences = []
+    ids = []
     for file in file_list:
-        sentences.append(get_ollama_description(file_path=file, modelfile=modelfile))
+        sentences.append(get_ollama_description(file_path=file, modelfile=modelfile)) # need to start saving these so it doesnt take 100 years for the program to run each time
+        ids.append(str(uuid.uuid4())) # generate a random id for each file
     # print(sentences)
     embeds = getEmbeddingList(model=embedmodel, sentences=sentences)
     doc_collection.add(
         embeddings=embeds,
         documents=file_list,
-        ids=[f'id{i}' for i in range(len(file_list))],
+        ids=ids,
     )
+
+
+
 
 # Helper functions more specific to tool calls
 # These will be called by the tools to perform the required tasks.
@@ -376,10 +409,13 @@ def create_file(file_path: str, content: str):
     @param file_path: str: The path of the file to be created.
     @param content: str: The content of the file.
     '''
-    with open(file_path, 'w') as file:
-        file.write(content)
-    
-    return "Success"
+    try:
+        with open(file_path, 'w') as file:
+            file.write(content)
+        add_to_database(file_list=[file_path])
+        return "Success"
+    except:
+        return "Failed"
 
 def remove_file(file_path: str):
     '''
@@ -424,7 +460,7 @@ def open_file(file_path: str):
 def generate_text(prompt):
     res = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{'role': 'user', 'content': f"Write some text for the following prompt: {prompt} and NO OTHER TEXT"}],
+        messages=[{'role': 'user', 'content': f"Write some text for the following prompt: {prompt} and NO OTHER TEXT OF ANY KIND YOU DO EXACTLY AS TOLD"}],
     )
     return res.choices[0].message.content
 
@@ -436,8 +472,26 @@ def list_directories():
     '''
     return ', '.join([name + '/' for name in os.listdir() if os.path.isdir(name)])
 
+def open_application(app_name: str):
+    '''
+    Open the application with the given name.
+    
+    @param application_name: str: The name of the application to be opened.
+    '''
+    try: 
+        os.system(f'open -a {app_name}')
+        return "Success"
+    except:
+        return "Failed"
 
-
+def list_applications():
+    '''
+    List all the applications that are currently running.
+    
+    @return: list: The list of applications that are currently running.
+    '''
+    running_apps = [app.localizedName() for app in NSWorkspace.sharedWorkspace().runningApplications()]
+    return ', '.join(running_apps)
 
 # main function
 if __name__ == "__main__":
@@ -459,35 +513,43 @@ SYSTEM You have to give a clear and detailed and accurate description of the fil
     os.getenv("OPENAI_API_KEY")
     client = OpenAI()
     
-    query = "create a file in my test directory with a poem about summer"
-    
     task_instruction = """
     You are an expert in composing functions. You are given a question and a set of possible functions. 
     Based on the question, you will need to make one or more function/tool calls to achieve the purpose. 
     """.strip()
-
-    prompt = f"[BEGIN OF TASK INSTRUCTION]\n{task_instruction}\n[END OF TASK INSTRUCTION]\n\n"
-    prompt += f"[BEGIN OF QUERY]\n{query}\n[END OF QUERY]\n\n"
-    
-    messages=[
-        { 'role': 'user', 'content': prompt}
-    ]
     
     print("Starting the pipeline")
-    i = 0
-    while True or i < 10:  
 
-        # print("Iteration", i)
-        # print("Messages:", messages)
+    while True:
+        
+        query = input("Give a query: ") #"create a file in my test directory with a poem about summer"
 
-        tools = get_tools()
-        available_functions = get_available_functions()
-
-        response = get_function_to_call(client=client, messages=messages, tools=tools, available_functions=available_functions)
-        if response == "Failed":
+        if query == "exit":
+            print("Exiting the pipeline")
             break
-        i += 1
-        messages = response
-    
-    print("Took", i, "iterations")
-    
+        
+        prompt = f"[BEGIN OF TASK INSTRUCTION]\n{task_instruction}\n[END OF TASK INSTRUCTION]\n\n"
+        prompt += f"[BEGIN OF QUERY]\n{query}\n[END OF QUERY]\n\n"
+        
+        messages=[
+            { 'role': 'user', 'content': prompt}
+        ]
+        
+        
+        i = 0
+        while True or i < 10:  
+
+            # print("Iteration", i)
+            # print("Messages:", messages)
+
+            tools = get_tools()
+            available_functions = get_available_functions()
+
+            response = get_function_to_call(client=client, messages=messages, tools=tools, available_functions=available_functions)
+            if response == "Failed":
+                break
+            i += 1
+            messages = response
+        
+        print("Took", i, "iterations")
+
