@@ -91,6 +91,7 @@ def get_available_functions():
         "list_files": list_files,
         "list_directories": list_directories,
         "open_application": open_application,
+        "close_application": close_application,
         "list_applications": list_applications,
     }
     return available_functions
@@ -229,7 +230,7 @@ def get_tools():
             "type": "function",
             "function": {
                 "name": "open_application",
-                "description": "Open the application with the given name.",
+                "description": "Open the application with the given name. Make sure you use the correct application name for mac.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -253,6 +254,23 @@ def get_tools():
                 }
             }
         },
+        {
+            "type": "function",
+            "function": {
+                "name": "close_application",
+                "description": "Close the application with the given name.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "app_name": {
+                            "type": "string",
+                            "description": "The name of the application to be closed."
+                        },
+                    },
+                    "required": ["app_name"],
+                }
+            }
+        }
     ]
     return tools
 
@@ -392,7 +410,6 @@ def list_files(initdir: str, file_extensions: list):
     return file_list
 
 
-
 # Tools
 # These functions are the tools that will be called to perform the required tasks.
 # These functions are passed to OpenAI's API to be called based on the query.
@@ -482,6 +499,18 @@ def open_application(app_name: str):
     '''
     try: 
         os.system(f'open -a {app_name}')
+        return "Success"
+    except:
+        return "Failed"
+
+def close_application(app_name: str):
+    '''
+    Close the application with the given name.
+    
+    @param application_name: str: The name of the application to be closed.
+    '''
+    try:
+        os.system(f'killall {app_name}')
         return "Success"
     except:
         return "Failed"
