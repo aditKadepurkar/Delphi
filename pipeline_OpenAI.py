@@ -324,13 +324,28 @@ def get_ollama_description(file_path: str, modelfile: str):
     """
     content = get_document_info(file_path)
     # print(content)
-    ollama.create(model='example', modelfile=modelfile)
-    response = ollama.chat(model="example", messages=[
-        {
-            'role': 'user',
-            'content': f'Filename: {os.path.basename(content[0])}, File content:{content[1]}'
-        }])
-    return response['message']['content']    
+    
+    client = OpenAI()
+
+    messages=[
+        {"role": "system", "content": "You give clear descriptions of the file passed to you."},
+        {'role': 'user', 'content': f'Filename: {os.path.basename(content[0])}, File content:{content[1]}'}
+        ]
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+    )
+    
+    return response.choices[0].message.content
+    
+    # ollama.create(model='example', modelfile=modelfile)
+    # response = ollama.chat(model="example", messages=[
+    #     {
+    #         'role': 'user',
+    #         'content': f'Filename: {os.path.basename(content[0])}, File content:{content[1]}'
+    #     }])
+    # return response['message']['content'] 
 
 def add_to_database(file_list: list):
 
@@ -528,7 +543,7 @@ def list_applications():
 if __name__ == "__main__":
     # Set the seed for reproducibility
     torch.random.manual_seed(0)
-    
+
     # Build the database
     embedmodel = getModel()
     modelfile = modelfile = '''FROM llama3
@@ -583,7 +598,7 @@ SYSTEM You have to give a clear and detailed and accurate description of the fil
                 break
             i += 1
             messages = response
-        
+
         stop_time = time.time()
         
         print("Took", i, "iterations")
