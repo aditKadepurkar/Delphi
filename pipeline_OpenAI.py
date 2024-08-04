@@ -539,6 +539,30 @@ def list_applications():
     running_apps = [app.localizedName() for app in NSWorkspace.sharedWorkspace().runningApplications()]
     return ', '.join(running_apps)
 
+def create_function(function_name: str, function_description: str):
+    '''
+    Create and run a function using a function name an description that is passed
+    to GPT-4o-mini to create a function that will be called.
+    
+    @param query: str: The query to be processed.
+    @return: str: The function to be called.
+    '''
+    
+    messages=[
+        {'role': 'system', 'content': 'You have to create a function based on the given description. NO OTHER TEXT.'},    
+        {'role': 'user', 'content': f"Create a function called {function_name} that {function_description}"}
+    ]
+    client = OpenAI()
+    client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+    )
+    
+    function_code = response.choices[0].message.content
+    exec(function_code)
+    
+    
+
 # main function
 if __name__ == "__main__":
     # Set the seed for reproducibility
