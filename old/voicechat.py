@@ -1,6 +1,6 @@
 """ This file includes a test of the voice chat feature via OpenAI. """
 
-from openai import OpenAI
+from GPT_function_calling import OpenAI
 import os
 from dotenv import load_dotenv
 import pyaudio

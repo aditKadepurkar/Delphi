@@ -424,7 +424,6 @@ def list_files(initdir: str, file_extensions: list):
         # print(f'   {n} : ".{k}" files')
     return file_list
 
-
 # Tools
 # These functions are the tools that will be called to perform the required tasks.
 # These functions are passed to OpenAI's API to be called based on the query.
@@ -550,7 +549,7 @@ def create_function(function_name: str, function_description: str):
     
     messages=[
         {'role': 'system', 'content': 'You have to create a function based on the given description. NO OTHER TEXT.'},    
-        {'role': 'user', 'content': f"Create a function called {function_name} that {function_description}"}
+        {'role': 'user', 'content': f"Create a function called {function_name} that does {function_description}"}
     ]
     client = OpenAI()
     client.chat.completions.create(
