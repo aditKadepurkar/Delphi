@@ -104,6 +104,8 @@ def get_description(file_path: str):
     content = get_document_info(file_path)
     # print(content)
     
+    load_dotenv()
+    os.getenv("OPENAI_API_KEY")
     client = OpenAI()
 
     messages=[
@@ -118,3 +120,18 @@ def get_description(file_path: str):
     
     return response.choices[0].message.content
 
+def get_document_info(file_path: str):
+    '''
+    Open the file at the given file path and return its content.
+    
+    @param file_path: str: The path of the file to be opened.
+    @return: str: The content of the file.
+    '''
+    try: 
+        with open(file_path, 'r') as file:
+            content = file.read()
+        # metadata = file.metadata
+        file_name = file_path
+        return (file_name, content)
+    except:
+        return None
