@@ -25,7 +25,7 @@ from Quartz import CGWindowListCopyWindowInfo, kCGWindowListOptionOnScreenOnly, 
 from AppKit import NSWorkspace, NSApplication, NSRunningApplication
 from Quartz.CoreGraphics import CGRectMake
 import subprocess
-from openai import OpenAI
+from GPT_function_calling import OpenAI
 from dotenv import load_dotenv
 import uuid
 import time

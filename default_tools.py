@@ -1,7 +1,7 @@
 import os
 import subprocess
 from helpers import find_window, resize_window
-from openai import OpenAI
+from GPT_function_calling import OpenAI
 from database import add_to_database
 
 def full_resize(window_name, x=0, y=0, w=1000, h=1000):
