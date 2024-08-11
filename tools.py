@@ -7,5 +7,6 @@ class tools:
     def get_tools(self):
         pass
     
-    def add_tool(self):
-        pass
+    def add_tool(self, function):
+        json = get_tool_json(function)
+        self.tools.append(json)

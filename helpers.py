@@ -1,7 +1,25 @@
+import torch
+import numpy as np
+import chromadb
+from chromadb import Collection
+from sentence_transformers import (
+    SentenceTransformer, models, losses, util, InputExample, evaluation, SentenceTransformerTrainingArguments, SentenceTransformerTrainer)
+from accelerate import Accelerator
+import glob
 import os
-import subprocess
+# import transformers
+# from transformers import AutoModelForCausalLM, AutoTokenizer
+import ollama
+import json
+import pygetwindow as gw
 from Quartz import CGWindowListCopyWindowInfo, kCGWindowListOptionOnScreenOnly, kCGNullWindowID
-
+from AppKit import NSWorkspace, NSApplication, NSRunningApplication
+from Quartz.CoreGraphics import CGRectMake
+import subprocess
+from GPT_function_calling import OpenAI
+from dotenv import load_dotenv
+import uuid
+import time
 
 def find_window(app_name):
     windows = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID)
@@ -59,3 +77,44 @@ def list_files(initdir: str, file_extensions: list):
     # for k, n in file_count.items():
         # print(f'   {n} : ".{k}" files')
     return file_list
+
+def getModel() -> SentenceTransformer:
+  """ This function creates a SentenceTransformer model using the 'sentence-transformers/all-MiniLM-L6-v2' base model. It utilizes accelerator to make use of multiple GPUs
+  and adds a layer to get the sentence embeddings via mean pooling. This model will be used for training sbert's sentence embeddings. """
+
+  accelerator = Accelerator()
+  print(f"Using GPUs: {accelerator.num_processes}")
+
+  # Get the base model to train
+  word_embedding_model = models.Transformer('sentence-transformers/all-MiniLM-L6-v2')
+
+  # Add layer to get "sentence embedding" (using mean pooling)
+  pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+  model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
+  return model
+
+def get_description(file_path: str):
+    """
+    Get the description of the input from the Ollama model.
+    
+    @param file_path: str: The file with the document.
+    @param modelfile: str: The modelfile for the Ollama model.
+    @return: str: The description of the input.
+    """
+    content = get_document_info(file_path)
+    # print(content)
+    
+    client = OpenAI()
+
+    messages=[
+        {"role": "system", "content": "You give clear descriptions of the file passed to you."},
+        {'role': 'user', 'content': f'Filename: {os.path.basename(content[0])}, File content:{content[1]}'}
+        ]
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+    )
+    
+    return response.choices[0].message.content
+
