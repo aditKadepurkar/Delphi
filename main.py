@@ -36,7 +36,7 @@ from tools import Tools
 # ollama.create(model='example', modelfile=modelfile)
 
 
-database = Database()
+database = Database('doccollection')
 print("Databse created")
 database.add_to_database(file_list=list_files('test', ['txt', 'c', 'py']))
 print("Database filled")
@@ -74,16 +74,16 @@ while True:
     
     
     i = 0
-    while True or i < 10:  
+    while True or i < 10:
 
         # print("Iteration", i)
         # print("Messages:", messages)
 
-        gpt = gpt_function_caller(tools.get_tools())
+        gpt = gpt_function_caller()
 
         available_functions = tools.get_available_functions()
 
-        response = gpt.call_func(messages=messages, tools=tools.get_tools(), available_functions=available_functions)
+        response = gpt.function_calling(messages=messages, tools=tools.get_tools(), available_functions=available_functions)
         if response == "Failed":
             break
         i += 1

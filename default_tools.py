@@ -2,7 +2,11 @@ import os
 import subprocess
 from helpers import find_window, resize_window, list_files
 from GPT_function_calling import OpenAI
-# from database import add_to_database
+from dotenv import load_dotenv
+from AppKit import NSWorkspace
+from database import Database
+
+database = Database('doccollection')
 
 def full_resize(window_name, x=0, y=0, w=1000, h=1000):
     window = find_window(window_name)
@@ -21,7 +25,7 @@ def create_file(file_path: str, content: str):
     try:
         with open(file_path, 'w') as file:
             file.write(content)
-        add_to_database(file_list=[file_path])
+        database.add_to_database(file_list=[file_path])
         return "Success"
     except:
         return "Failed"
@@ -45,11 +49,10 @@ def search_files(query: str):
     @param embedmodel: SentenceTransformer: The model to be used for getting the embeddings.
     @return: list: The list of files that match the query.
     '''
-    query_result = doc_collection.query(
-        query_embeddings=[getEmbeddingList(embedmodel, query)],
-        n_results=1,
+    query_result = database.query_database(
+        query=query,
     )
-    return query_result['documents'][0][0]
+    return query_result
 
 def open_file(file_path: str):
     '''
@@ -67,6 +70,10 @@ def open_file(file_path: str):
         return "Failed"
 
 def generate_text(prompt):
+    load_dotenv()
+    os.getenv("OPENAI_API_KEY")
+    client = OpenAI()
+    
     res = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{'role': 'user', 'content': f"Write some text for the following prompt: {prompt} and NO OTHER TEXT OF ANY KIND YOU DO EXACTLY AS TOLD"}],
@@ -128,7 +135,7 @@ def create_function(function_name: str, function_description: str):
         {'role': 'user', 'content': f"Create a function called {function_name} that does {function_description}"}
     ]
     client = OpenAI()
-    client.chat.completions.create(
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
     )

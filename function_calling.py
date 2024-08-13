@@ -5,5 +5,5 @@ class function_caller:
     def set_func(self, func):
         pass
 
-    def call_func(self, *args, **kwargs):
+    def function_calling(self, messages, tools, available_functions):
         pass

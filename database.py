@@ -3,10 +3,11 @@ from chromadb import Collection
 from helpers import get_description, getModel
 import uuid
 
+
 class Database:
-    def __init__(self):
+    def __init__(self, name):
         client = chromadb.Client()
-        self.database = client.get_or_create_collection('database')
+        self.database = client.get_or_create_collection(name)
         self.embedmodel = getModel()
     
     def add_to_database(self, file_list: list):
@@ -36,7 +37,7 @@ class Database:
         @return: list: The list of files that match the query.
         '''
         query_result = self.database.query(
-            query_embeddings=[getEmbeddingList(self.embedmodel, query)],
+            query_embeddings=[self.get_embedding_list(query)],
             n_results=1,
         )
         return query_result['documents'][0][0]
