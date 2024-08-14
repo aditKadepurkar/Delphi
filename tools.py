@@ -1,4 +1,5 @@
 from default_tools import DEFAULT_TOOLS, DEFAULT_TOOLS_JSON
+from helpers import get_tool_json
 
 class Tools:
     def __init__(self):
@@ -16,4 +17,3 @@ class Tools:
     def add_tool(self, function):
         self.json.append(get_tool_json(function))
         self.functions[function.__name__] = function
-        

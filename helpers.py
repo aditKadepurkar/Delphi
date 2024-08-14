@@ -135,3 +135,6 @@ def get_document_info(file_path: str):
         return (file_name, content)
     except:
         return None
+
+def get_tool_json():
+    pass
