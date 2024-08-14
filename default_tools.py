@@ -272,14 +272,6 @@ DEFAULT_TOOLS_JSON = [
                         "type": "string",
                         "description": "The query to search for the file. This query should be something that is semantically similar to what we are looking for.",
                     },
-                    "collection": {
-                        "type": "string",
-                        "description": "The collection to search in. (Use doccollection for now)"
-                    },
-                    "embedmodel": {
-                        "type": "string",
-                        "description": "The model to be used for getting the embeddings. (Use embedmodel for now)"
-                    }
                 },
                 "required": ["query"],
             }

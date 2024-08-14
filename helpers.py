@@ -79,19 +79,20 @@ def list_files(initdir: str, file_extensions: list):
     return file_list
 
 def getModel() -> SentenceTransformer:
-  """ This function creates a SentenceTransformer model using the 'sentence-transformers/all-MiniLM-L6-v2' base model. It utilizes accelerator to make use of multiple GPUs
-  and adds a layer to get the sentence embeddings via mean pooling. This model will be used for training sbert's sentence embeddings. """
+    """ This function creates a SentenceTransformer model using the 'sentence-transformers/all-MiniLM-L6-v2' base model. It utilizes accelerator to make use of multiple GPUs
+    and adds a layer to get the sentence embeddings via mean pooling. This model will be used for training sbert's sentence embeddings. """
 
-  accelerator = Accelerator()
-  print(f"Using GPUs: {accelerator.num_processes}")
+    accelerator = Accelerator()
+    print(f"Using GPUs: {accelerator.num_processes}")
 
   # Get the base model to train
-  word_embedding_model = models.Transformer('sentence-transformers/all-MiniLM-L6-v2')
+#   word_embedding_model = models.Transformer('sentence-transformers/all-MiniLM-L6-v2')
 
   # Add layer to get "sentence embedding" (using mean pooling)
-  pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
-  model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
-  return model
+#   pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+#   model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
+    model = SentenceTransformer("multi-qa-mpnet-base-cos-v1")
+    return model
 
 def get_description(file_path: str):
     """
