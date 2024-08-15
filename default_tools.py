@@ -143,7 +143,7 @@ def create_function(function_name: str, function_description: str):
     function_code = response.choices[0].message.content
     exec(function_code)
     
-    
+
 
 DEFAULT_TOOLS = {
     "full_resize": full_resize,

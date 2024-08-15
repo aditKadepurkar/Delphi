@@ -137,5 +137,17 @@ def get_document_info(file_path: str):
     except:
         return None
 
-def get_tool_json():
-    pass
+def get_tool_json(function):
+    name = function.__name__
+    arg_count = function.__code__.co_argcount
+    params = function.__code__.co_varnames
+    
+    dict = {}
+    dict['name'] = name
+    dict['description'] = ""
+        
+    
+    
+    ret_json = {}
+    ret_json['type'] = "function"
+    ret_json['function'] = dict
