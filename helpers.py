@@ -121,6 +121,19 @@ def get_description(file_path: str):
     
     return response.choices[0].message.content
 
+def convert_to_xlam_tools(tools):
+    ''''''
+    if isinstance(tools, dict):
+        return {
+            "name": tools["name"],
+            "description": tools["description"],
+            "parameters": {k: v for k, v in tools["parameters"].get("properties", {}).items()}
+        }
+    elif isinstance(tools, list):
+        return [convert_to_xlam_tools(tool) for tool in tools]
+    else:
+        return tools
+
 def get_document_info(file_path: str):
     '''
     Open the file at the given file path and return its content.

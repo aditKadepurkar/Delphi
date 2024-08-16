@@ -16,7 +16,7 @@ class gpt_function_caller(function_caller):
         
         # Get the response
         response = self.client.chat.completions.create(
-            model="gpt-4-0125-preview", #"gpt-4o-mini",
+            model="gpt-4o-mini",
             messages=messages,
             tools=tools,
             tool_choice="auto"
