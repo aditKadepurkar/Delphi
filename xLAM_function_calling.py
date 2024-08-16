@@ -28,7 +28,7 @@ class xlam_function_calling(function_caller):
         messages.append(
             { 'role': 'user', 'content': prompt}
         )
-        
+
         inputs = self.tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt").to(self.device)
         
         outputs = self.model.generate(inputs, max_new_tokens=512, do_sample=False, num_return_sequences=1, eos_token_id=self.tokenizer.eos_token_id)
