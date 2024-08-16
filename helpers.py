@@ -124,6 +124,7 @@ def get_description(file_path: str):
 def convert_to_xlam_tools(tools):
     ''''''
     if isinstance(tools, dict):
+        tools = tools["function"]
         return {
             "name": tools["name"],
             "description": tools["description"],

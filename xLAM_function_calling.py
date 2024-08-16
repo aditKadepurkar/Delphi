@@ -9,7 +9,7 @@ class xlam_function_calling(function_caller):
     def __init__(self):
         torch.random.manual_seed(0) 
         model_name = "Salesforce/xLAM-1b-fc-r"
-        self.model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype="auto", trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name, device_map="cpu", torch_dtype="auto", trust_remote_code=True)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.task_instruction = TASK_INSTRUCTION_XLAM
         self.format_instruction = FORMAT_INSTRUCTION_XLAM
@@ -33,8 +33,27 @@ class xlam_function_calling(function_caller):
         
         outputs = self.model.generate(inputs, max_new_tokens=512, do_sample=False, num_return_sequences=1, eos_token_id=self.tokenizer.eos_token_id)
         
-        out = self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
+        response_message = self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
+        print(response_message)
+        tool_calls = json.loads(response_message)["tool_calls"]
         
-        # TODO: Implement the logic to extract the tool calls from the output
-        
-        return
+        if tool_calls:
+            messages.append(response_message)
+            for tool_call in tool_calls:
+                function_name = tool_call["name"]
+                function = available_functions[function_name]
+                parameters = tool_call["arguments"]
+                
+                func_response = function(
+                    **parameters
+                )
+
+                messages.append(
+                    {
+                        "role": "tool",
+                        "name": function_name,
+                        "content": func_response,
+                    }
+                )
+            return messages
+        return "Failed"
