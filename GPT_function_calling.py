@@ -13,7 +13,7 @@ class gpt_function_caller(function_caller):
 
     def function_calling(self, messages, tools, available_functions):
         """Calls one iteration of the function calling process."""
-        
+
         # Get the response
         response = self.client.chat.completions.create(
             model="gpt-4o-mini",
@@ -24,9 +24,7 @@ class gpt_function_caller(function_caller):
 
         response_message = response.choices[0].message
         tool_calls = response_message.tool_calls
-        
-        
-        
+
         if tool_calls:
             messages.append(response_message)
             for tool_call in tool_calls:
