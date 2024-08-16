@@ -36,7 +36,7 @@ class xlam_function_calling(function_caller):
         response_message = self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
         print(response_message)
         tool_calls = json.loads(response_message)["tool_calls"]
-        
+
         if tool_calls:
             messages.append(response_message)
             for tool_call in tool_calls:
