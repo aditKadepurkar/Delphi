@@ -34,6 +34,6 @@ name = input("Give a function name(beware creating dangerous functions): ")
 desc = input("Give a function description: ")
 create_function(name, desc)
 try:
-    modify_file("old/random.txt", "the file should now be able trains instead of windows")
+    modify_file("old/random.txt", "the file should now be about trains instead of windows")
 except NameError:
     print("Function not created")
