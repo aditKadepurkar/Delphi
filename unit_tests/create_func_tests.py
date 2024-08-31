@@ -17,10 +17,9 @@ class TestCreateFunction(unittest.TestCase):
         return "Hello, World!"
         """
         MockOpenAI.return_value.chat.completions.create.return_value = mock_response
-        create_function('add', 'takes two integers and returns their sum')
-
-        add_function = globals().get('add')
-        self.assertIsNotNone(add_function)  
-        self.assertEqual(add_function(2, 3), 5)
+        ret = create_function('add', 'takes two integers and returns their sum')
+        exec(ret, globals())
+        # self.assertIsNotNone(add)  
+        self.assertEqual(add(2, 3), 5)
 if __name__ == '__main__':
     unittest.main()

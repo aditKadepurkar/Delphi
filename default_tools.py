@@ -131,9 +131,12 @@ def create_function(function_name: str, function_description: str):
     '''
     
     messages=[
-        {'role': 'system', 'content': 'You have to create a function based on the given description. NO OTHER TEXT.'},    
+        {'role': 'system', 'content': 'You have to create a function based on the given description. NO OTHER TEXT. DO NOT create a codeblock, plaintext of ONLY the function'},    
         {'role': 'user', 'content': f"Create a function called {function_name} that does {function_description}"}
     ]
+
+    load_dotenv()
+    os.getenv("OPENAI_API_KEY")
     client = OpenAI()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -141,8 +144,10 @@ def create_function(function_name: str, function_description: str):
     )
     
     function_code = response.choices[0].message.content
-    exec(function_code)
-    
+
+    # exec(function_code, globals())
+
+    return function_code
 
 
 DEFAULT_TOOLS = {
