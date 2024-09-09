@@ -44,7 +44,7 @@ while True:
     prompt += f"[BEGIN OF QUERY]\n{query}\n[END OF QUERY]\n\n"
     
     messages=[
-        
+        { 'role': 'user', 'content': prompt}
     ]
     
     

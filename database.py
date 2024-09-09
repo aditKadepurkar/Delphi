@@ -24,7 +24,7 @@ class Database:
             ids=ids,
         )
     
-    def remove_from_database():
+    def remove_from_database(self):
         pass
     
     def query_database(self, query: str):
