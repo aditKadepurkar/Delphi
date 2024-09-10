@@ -29,7 +29,7 @@ Based on the question, you will need to make one or more function/tool calls to 
 """.strip()
 
 print("Starting the pipeline")
-
+# grok
 while True:
     
     query = input("Give a query: ") #"create a file in my test directory with a poem about summer"
@@ -44,7 +44,7 @@ while True:
     prompt += f"[BEGIN OF QUERY]\n{query}\n[END OF QUERY]\n\n"
     
     messages=[
-        
+        { 'role': 'user', 'content': prompt}
     ]
     
     

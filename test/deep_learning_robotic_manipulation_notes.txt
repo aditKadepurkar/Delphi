@@ -1,0 +1,42 @@
+# Deep Learning for Robotic Manipulation Course Notes
+
+## Course Overview
+- Brief introduction to the course and objectives
+- Key topics to be covered
+
+## Week 1: Introduction to Deep Learning
+- What is Deep Learning?
+- Applications in Robotics
+- Course logistics and expectations
+
+## Week 2: Neural Networks
+- Architecture of Neural Networks
+- Forward and Backward Propagation
+- Activation Functions
+
+## Week 3: Convolutional Neural Networks (CNNs)
+- Introduction to CNNs
+- Image processing and applications in Robotics
+- CNN architectures
+
+## Week 4: Reinforcement Learning
+- Basics of Reinforcement Learning
+- Key algorithms
+- Applications in robotic manipulation
+
+## Week 5: Robotic Manipulation Techniques
+- Overview of robotic manipulation
+- Grasping and control strategies
+
+## Week 6: Integration of Deep Learning and Robotics
+- Combining deep learning models with robotic systems
+- Case studies and applications
+
+## Additional Resources
+- Recommended readings
+- Online courses and tutorials
+- Research papers and articles
+
+## Summary and Conclusion
+- Key takeaways from the course
+- Future directions in deep learning and robotics
