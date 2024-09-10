@@ -131,7 +131,7 @@ def create_function(function_name: str, function_description: str):
     '''
     
     messages=[
-        {'role': 'system', 'content': 'You have to create a function based on the given description. NO OTHER TEXT. DO NOT create a codeblock, plaintext of ONLY the function'},    
+        {'role': 'system', 'content': 'You have to create a function based on the given description. Remember that you are controlling a Macbook device and its applications. NO OTHER TEXT. DO NOT create a codeblock, plaintext of ONLY the function'},    
         {'role': 'user', 'content': f"Create a function called {function_name} that does {function_description}"}
     ]
 
