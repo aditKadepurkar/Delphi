@@ -21,8 +21,9 @@ class VoiceChat:
         self.q = queue.Queue()
         self.listening = threading.Event()
         self.recording = threading.Event()
-        self.wake_phrase = 'delphi'
+        self.wake_phrase = 'hello'
         self.stream = None
+        self.transcription = None
         
         load_dotenv()
         os.getenv("OPENAI_API_KEY")
@@ -31,6 +32,7 @@ class VoiceChat:
         self.frames = []
 
     def start(self):
+        self.transcription = None
         if not self.listening.is_set():
             self.listening.set()
             threading.Thread(target=self.listen_function, daemon=True).start()
@@ -58,11 +60,13 @@ class VoiceChat:
 
                         if text:
                             last_command_time = time.time()
-                            if text.lower().translate(str.maketrans("", "", string.punctuation)) == self.wake_phrase:
+                            if text.lower().strip() == self.wake_phrase:
                                 print("Wake phrase detected. Listening for commands...")
-                                self.record_and_process()
-                            else:
-                                print(f"Heard: {text}")
+                                self.transcription = self.record_and_process()
+                                self.stop()
+                                return
+                            # else:
+                            #     print(f"Heard: {text}")
                         else:
                             if time.time() - last_command_time > silence_timeout:
                                 print("No command detected in the last 5 seconds. Stopping listen function.")
@@ -94,12 +98,13 @@ class VoiceChat:
             transcribed_text = self.process_audio_text(audio_data)
 
             if transcribed_text:
-                print(f"You said: {transcribed_text}")
+                return transcribed_text.lower().strip()
                 # TODO: Add the appropriate GPT function here
                 # response = self.gpt_function(transcribed_text)
                 # print(f"Assistant: {response}")
             else:
-                print("Not clear")
+                # print("Not clear")
+                return "Failure"
 
     def process_audio_text(self, audio_data):
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmpfile:
@@ -117,6 +122,10 @@ class VoiceChat:
                         file=audio_file,
                         response_format="text"
                     )
+                    transcription = transcription.replace(',', '')
+                    transcription = transcription.replace('.', '')
+                    transcription = transcription.replace('?', '')
+                    transcription = transcription.replace('!', '')
                 return transcription
             except Exception as e:
                 print(f"Error in transcription: {e}")

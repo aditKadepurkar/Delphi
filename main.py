@@ -7,6 +7,7 @@ from GPT_function_calling import gpt_function_caller
 from tools import Tools
 from xLAM_function_calling import xlam_function_calling
 import os
+from voice_chat import VoiceChat
 
 database = Database('doccollection')
 print("Databse created")
@@ -28,11 +29,30 @@ You are an expert in composing functions. You are given a question and a set of 
 Based on the question, you will need to make one or more function/tool calls to achieve the purpose. 
 """.strip()
 
+
+# voice chat
+vcres = input("Voice chat? (y/n): ")
+assistant = VoiceChat()
+
+
 print("Starting the pipeline")
 # grok
 while True:
-    
-    query = input("Give a query: ") #"create a file in my test directory with a poem about summer"
+    if vcres == "y":
+        assistant.start()
+        i = 0
+        while assistant.transcription == None and i < 1000:
+            i += 1
+        
+        if i == 1000:
+            print("Failed to get transcription")
+            query = input("Give a query: ")
+        else:
+            query = assistant.transcription
+        
+        
+    else:
+        query = input("Give a query: ") #"create a file in my test directory with a poem about summer"
     
     start_time = time.time()
     
