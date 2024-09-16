@@ -4,17 +4,18 @@ import threading
 import queue
 import time
 import os
-import string
+import speech_recognition as sr
 import tempfile
 from openai import OpenAI
 import wave
 from dotenv import load_dotenv
 
 CHUNK = 1024
-FORMAT = np.int16  # Use NumPy data type
+FORMAT = np.int16
 CHANNELS = 1
 RATE = 16000
 RECORD_SECONDS = 5
+SILENCE_THRESHOLD = 5 
 
 class VoiceChat:
     def __init__(self):
@@ -24,7 +25,7 @@ class VoiceChat:
         self.wake_phrase = 'hello'
         self.stream = None
         self.transcription = None
-        
+        self.recognizer = sr.Recognizer()
         load_dotenv()
         os.getenv("OPENAI_API_KEY")
         
@@ -41,12 +42,10 @@ class VoiceChat:
             print("Voice chat is already enabled")
 
     def listen_function(self):
-        last_command_time = time.time()
-        silence_timeout = 5
         buffer = []
         buffer_duration = 2
 
-        print("Listening for audio...")
+        print("Listening for wake word...")
         with sd.InputStream(callback=self.audio_callback, channels=CHANNELS, samplerate=RATE, dtype=FORMAT):
             while self.listening.is_set():
                 if not self.q.empty():
@@ -54,89 +53,75 @@ class VoiceChat:
                     buffer.append(audio_data)
 
                     if len(buffer) * CHUNK >= RATE * buffer_duration:
-                        audio_data = b''.join(buffer)
-                        text = self.process_audio_text(audio_data)
+                        audio_buffer = b''.join(buffer)
+                        audio_np = np.frombuffer(audio_buffer, dtype=np.int16)
+                        audio_data = sr.AudioData(audio_np.tobytes(), RATE, 2)
                         buffer = []  
 
-                        if text:
-                            last_command_time = time.time()
-                            if text.lower().strip() == self.wake_phrase:
-                                print("Wake phrase detected. Listening for commands...")
-                                self.transcription = self.record_and_process()
-                                self.stop()
-                                return
-                            # else:
-                            #     print(f"Heard: {text}")
-                        else:
-                            if time.time() - last_command_time > silence_timeout:
-                                print("No command detected in the last 5 seconds. Stopping listen function.")
-                                self.listening.clear()
-                                break
+                        try:
+                            text = self.recognizer.recognize_google(audio_data, language='pt', show_all=False)
+                            if text:
+                                text = text.lower()
+                        except sr.UnknownValueError:
+                            text = ""
 
-        print("Listen function has stopped.")
+                        if text and self.wake_phrase in text:
+                            print("Wake phrase detected. Activating voice chat.")
+                            self.activate_voice_chat()
+
+        print("Listen function stopped.")
+
+    def activate_voice_chat(self):
+        last_speech_time = time.time()
+        buffer = []
+        buffer_duration = 2
+
+        print("Voice chat activated. Listening for commands...")
+        while self.listening.is_set():
+            if not self.q.empty():
+                audio_data = self.q.get()
+                buffer.append(audio_data)
+
+                if len(buffer) * CHUNK >= RATE * buffer_duration:
+                    audio_buffer = b''.join(buffer)
+                    audio_np = np.frombuffer(audio_buffer, dtype=np.int16)
+                    audio_data = sr.AudioData(audio_np.tobytes(), RATE, 2)
+                    buffer = []
+
+                    try:
+                        text = self.recognizer.recognize_google(audio_data, language='pt', show_all=False)
+                        if text:
+                            text = text.lower()
+                            print(f"User said: {text}")
+                            last_speech_time = time.time()
+                            
+                            response = self.process_command(text)
+                            print(f"Assistant: {response}")
+                            
+                            # TODO: Implement text-to-speech for the response
+                    except sr.UnknownValueError:
+                        pass
+
+            if time.time() - last_speech_time > SILENCE_THRESHOLD:
+                print("No speech detected for 5 seconds. Listening for wake word again.")
+                break
+
+        print("Voice chat disabled by state.")
+
+    def process_command(self, command):
+        # TODO: Implement more sophisticated command processing
+        # For now, we'll just echo the command
+        return f"You said: {command}"
 
     def audio_callback(self, indata, frames, time, status):
-        """Callback function to receive audio input"""
         if status:
             print(status)
         self.q.put(indata.copy())
 
-    def record_and_process(self):
-        self.recording.set()
-        self.frames = []
-        print("Recording your commands good sir...")
-        start_time = time.time()
-        while self.recording.is_set() and time.time() - start_time < RECORD_SECONDS:
-            if not self.q.empty():
-                self.frames.append(self.q.get())
-
-        print("Recording finished.")
-        self.recording.clear()
-
-        if self.frames:
-            audio_data = b''.join(self.frames)
-            transcribed_text = self.process_audio_text(audio_data)
-
-            if transcribed_text:
-                return transcribed_text.lower().strip()
-                # TODO: Add the appropriate GPT function here
-                # response = self.gpt_function(transcribed_text)
-                # print(f"Assistant: {response}")
-            else:
-                # print("Not clear")
-                return "Failure"
-
-    def process_audio_text(self, audio_data):
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmpfile:
-            wf = wave.open(tmpfile.name, 'wb')
-            wf.setnchannels(CHANNELS)
-            wf.setsampwidth(2)  # 16-bit audio
-            wf.setframerate(RATE)
-            wf.writeframes(audio_data)
-            wf.close()
-
-            try:
-                with open(tmpfile.name, "rb") as audio_file:
-                    transcription = self.client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file,
-                        response_format="text"
-                    )
-                    transcription = transcription.replace(',', '')
-                    transcription = transcription.replace('.', '')
-                    transcription = transcription.replace('?', '')
-                    transcription = transcription.replace('!', '')
-                return transcription
-            except Exception as e:
-                print(f"Error in transcription: {e}")
-                return ""
-            finally:
-                os.unlink(tmpfile.name)
-
     def stop(self):
         self.listening.clear()
         self.recording.clear()
-        print("Voice chat disabled")
+        print("Voice chat disabled by command.")
 
 def main():
     assistant = VoiceChat()
