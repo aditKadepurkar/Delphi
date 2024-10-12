@@ -9,7 +9,8 @@ import os
 import wave
 import tempfile
 import whisper
-from scipy.signal import lfilter
+from gtts import gTTS
+from playsound import playsound
 
 CHANNELS = 1
 RATE = 16000  # Whisper models expect 16kHz audio
@@ -136,8 +137,14 @@ class WakeWordAssistant:
             print(f"Error in transcribe_audio: {e}")
         return None
         
-
-        
+    def text_to_speech(self, text):
+        try:
+            tts = gTTS(text=text, lang="en")
+            tts.save("speech.mp3")
+            playsound("speech.mp3")
+        except Exception as e:
+            print(f"Error in text_to_speech: {e}")
+    
     def process_commands(self):
         print("Assistant activated. Listening for commands...")
         audio_buffer = []
@@ -171,10 +178,11 @@ class WakeWordAssistant:
                                 
                                 response = self.get_ai_response(text)
                                 print(f"Assistant: {response}")
+                                self.text_to_speech(response)
                                 print('Good bye now.')
                                 self.stop()
                                 break
-                                # self.text_to_speech(response)  # Implement this method for speech output
+                                  # Implement this method for speech output
                             else :
                                 consecutive_silence += 1
                         else:
@@ -189,7 +197,7 @@ class WakeWordAssistant:
 
         except Exception as e:
             print(f"Error in process_commands: {e}")
-        
+    
     def get_ai_response(self, user_input):
         try:
             response = self.client.chat.completions.create(
