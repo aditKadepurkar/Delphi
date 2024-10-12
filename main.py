@@ -40,15 +40,19 @@ print("Starting the pipeline")
 while True:
     if vcres == "y":
         assistant.start()
-        i = 0
-        while assistant.transcription == None and i < 1000:
-            i += 1
         
-        if i == 1000:
+        stop = input("Stop the recording? (y/n): ")
+        if stop == "y":
+            assistant.stop()
+        
+        if not assistant.transcription:
             print("Failed to get transcription")
             query = input("Give a query: ")
         else:
+            print("Transcribed successfully")
             query = assistant.transcription
+            print("Query:", query)
+
         
         
     else:

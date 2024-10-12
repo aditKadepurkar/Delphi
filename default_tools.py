@@ -144,6 +144,32 @@ def create_function(function_name: str, function_description: str):
     )
     
     function_code = response.choices[0].message.content
+    
+    
+    # feedback_loop
+    messages_feedback=[
+        {'role': 'system', 'content': """YOU MUST LOOK AT THE FUNCTIONS CODE AND ENSURE IT IS CORRECT. Make sure it has correct formatting(it should not have any text besides the code and no ``` around the code). It should be code you can directly run with exec() RESPOND WITH ONLY 'GOOD' OR 'BAD' NO OTHER TEXT."""},
+        {'role': 'user', 'content': f"{function_code}"},
+    ]
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages_feedback,
+    )
+    
+    res = response.choices[0].message.content
+    
+    # and probably loop this for a max of n times or until it is "correct"
+    if res == "BAD":
+        messages_feedback=[
+            {'role': 'system', 'content': "You have to create a function based on the given description. Remember that you are controlling a Macbook device and its applications. NO OTHER TEXT. DO NOT create a codeblock, plaintext of ONLY the function"},    
+            {'role': 'user', 'content': f"Create a function called {function_name} that does {function_description}"}
+        ]
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages_feedback,
+        )
 
     # exec(function_code, globals())
 
